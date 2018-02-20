@@ -7,7 +7,8 @@ from docx.table import _Cell, Table
 from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
 
-os.chdir('C:\\Users\\mocolab\\PycharmProjects\\parser') #docx file directory
+os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
+doc = docx.Document('Use_case 작성.docx')
 
 class Tree:
     def __init__(self, data, parent=None):
@@ -42,7 +43,7 @@ def iter_block_items(parent):
     would most commonly be a reference to a main Document object, but
     also works for a _Cell object, which itself can contain paragraphs and tables.
     """
-    if isinstance(parent, Document):
+    if isinstance(parent, Document): #The type of root is determined.
         parent_elm = parent.element.body
     elif isinstance(parent, _Cell):
         parent_elm = parent._tc
@@ -97,9 +98,7 @@ def table_parsing(root):
 
 
 def srs_parsing():
-    doc = docx.Document('Use_case 작성.docx')
     for block,root, ilvl_val,ccff in iter_block_items(doc): #ccff : cell_color_filled_flag
-
         if "Paragraph" in str(type(block)):
             if ccff == 1 :
                 print ('__%s ||%s||'%(str(ilvl_val),block.text))
