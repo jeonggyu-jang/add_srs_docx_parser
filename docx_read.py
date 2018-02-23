@@ -23,6 +23,11 @@ class Paragraph_DS:
         self.ilvl = ilvl
         self.ccff = ccff
         self.name = name
+        self.tree = None
+        self.kkma_pos()
+    def kkma_pos(self):
+        kkma=Kkma()
+        self.tree = kkma.pos(self.text)
 
 class Tbl_DS:
     def __init__(self,tblId,newCell=None):
@@ -218,9 +223,11 @@ def print_out_srs(srs):
                 if k != (srs[i].ilvl)-1 : print("     ",end="")
                 else : print("   L__",end="")
             if srs[i].ccff == 1 :
-                print ('__%s ||%s||'%(str(srs[i].ilvl),srs[i].text))
+                print ('__%s ||%s||'%(str(srs[i].ilvl),srs[i].text),end=" ")
+                print ('_%s_'%(srs[i].tree))
             else :
-                print ('__%s %s'%(str(srs[i].ilvl),srs[i].text))
+                print ('__%s %s'%(str(srs[i].ilvl),srs[i].text),end=" ")
+                print ('_%s_'%(srs[i].tree))
         elif isinstance(srs[i],Tbl_DS) :
             print_out_table(srs[i])
 
@@ -235,9 +242,11 @@ def print_out_table(table):
                 if k != table.cells[i].get('cell').prgrphs[j].ilvl - 1 : print("     ",end="")
                 else : print("   L__",end="")
             if table.cells[i].get('cell').prgrphs[j].ccff == 1 :
-                print ('__%s ||%s||'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                print ('__%s ||%s||'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text),end="")
+                print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
             else :
-                print ('__%s %s'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                print ('__%s %s'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text),end="")
+                print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
         for j in range(len(table.cells[i].get('cell').tbls)):
             print_out_table(table.cells[i].get('cell').tbls[j])
 
