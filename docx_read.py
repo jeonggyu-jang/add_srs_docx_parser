@@ -8,14 +8,27 @@ from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Border, Side, Font, Alignment, PatternFill, Color
-from konlpy.tag import Kkma
+from konlpy.tag import Kkma, Twitter
 from konlpy.utils import pprint
 import datetime
 
+pos_printout = 0 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
 doc = docx.Document('Use_case 작성.docx')
 global sv_tblId #shared variable for table ID numbering
 sv_tblId = 0
+
+def passive_check(tree):
+    violation_flag=0
+    passive_DB = ['되','어지','받','당하','이','히','리','기']
+    print(tree)
+    for i in range(len(tree)):
+        for j in range(len(passive_DB)):
+            if passive_DB[j] in tree[i][0] and ('N' != tree[i][1][0] and 'J' != tree[i][1][0] ):
+                print("\t[WARNING!!] Passive_rule checking violation!!",end=" ")
+                print(": There is \"%s\" in \"%s\"[%d]"%(passive_DB[j],tree[i][0],i))
+                violation_flag = 1
+    return violation_flag
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None):
@@ -24,10 +37,19 @@ class Paragraph_DS:
         self.ccff = ccff
         self.name = name
         self.tree = None
+        self.t_tree = None
         self.kkma_pos()
+        self.twitter_pos()
+        self.violation_flag = passive_check(self.t_tree)
+        if self.violation_flag == 0 :
+            self.violation_flag = passive_check(self.tree)
+
     def kkma_pos(self):
         kkma=Kkma()
         self.tree = kkma.pos(self.text)
+    def twitter_pos(self):
+        twitter = Twitter()
+        self.t_tree = twitter.pos(self.text,stem=True)
 
 class Tbl_DS:
     def __init__(self,tblId,newCell=None):
@@ -223,11 +245,19 @@ def print_out_srs(srs):
                 if k != (srs[i].ilvl)-1 : print("     ",end="")
                 else : print("   L__",end="")
             if srs[i].ccff == 1 :
-                print ('__%s ||%s||'%(str(srs[i].ilvl),srs[i].text),end=" ")
-                print ('_%s_'%(srs[i].tree))
+                print ('__%s ||%s||'%(str(srs[i].ilvl),srs[i].text))
+                if pos_printout == 1:
+                    print ('_%s_'%(srs[i].tree))
+                    print ('_%s_'%(srs[i].t_tree))
+                if srs[i].violation_flag == 1 :
+                    print('L__[Rule Violation!!]')
             else :
-                print ('__%s %s'%(str(srs[i].ilvl),srs[i].text),end=" ")
-                print ('_%s_'%(srs[i].tree))
+                print ('__%s %s'%(str(srs[i].ilvl),srs[i].text))
+                if pos_printout == 1:
+                    print ('_%s_'%(srs[i].tree))
+                    print ('_%s_'%(srs[i].t_tree))
+                if srs[i].violation_flag == 1 :
+                    print('L__[Rule Violation!!]')
         elif isinstance(srs[i],Tbl_DS) :
             print_out_table(srs[i])
 
@@ -242,11 +272,19 @@ def print_out_table(table):
                 if k != table.cells[i].get('cell').prgrphs[j].ilvl - 1 : print("     ",end="")
                 else : print("   L__",end="")
             if table.cells[i].get('cell').prgrphs[j].ccff == 1 :
-                print ('__%s ||%s||'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text),end="")
-                print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
+                print ('__%s ||%s||'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                if pos_printout == 1:
+                    print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
+                    print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].t_tree))
+                if table.cells[i].get('cell').prgrphs[j].violation_flag == 1 :
+                    print('L__[Rule Violation!!]')
             else :
-                print ('__%s %s'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text),end="")
-                print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
+                print ('__%s %s'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                if pos_printout == 1:
+                    print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
+                    print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].t_tree))
+                if table.cells[i].get('cell').prgrphs[j].violation_flag == 1 :
+                    print('L__[Rule Violation!!]')
         for j in range(len(table.cells[i].get('cell').tbls)):
             print_out_table(table.cells[i].get('cell').tbls[j])
 
