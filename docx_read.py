@@ -14,7 +14,8 @@ import datetime
 
 pos_printout = 0 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
-doc = docx.Document('Use_case 작성.docx')
+#doc = docx.Document('Use_case 작성.docx')
+doc = docx.Document('Use_case_0302.docx')
 global sv_tblId #shared variable for table ID numbering
 sv_tblId = 0
 
@@ -38,18 +39,24 @@ class Paragraph_DS:
         self.name = name
         self.tree = None
         self.t_tree = None
-        self.kkma_pos()
         self.twitter_pos()
+        self.kkma_pos()
         self.violation_flag = passive_check(self.t_tree)
         if self.violation_flag == 0 :
             self.violation_flag = passive_check(self.tree)
-
     def kkma_pos(self):
         kkma=Kkma()
-        self.tree = kkma.pos(self.text)
+        try :
+            self.tree = kkma.pos(self.text)
+        except:
+            if self.tree == None :
+                self.tree = []
     def twitter_pos(self):
         twitter = Twitter()
-        self.t_tree = twitter.pos(self.text,stem=True)
+        try:
+            self.t_tree = twitter.pos(self.text,stem=True)
+        except:
+            pass
 
 class Tbl_DS:
     def __init__(self,tblId,newCell=None):
@@ -91,7 +98,6 @@ class Cell_DS:
         self.tbls.append(newTbl)
     def affilate_tbl(self):
         self.affTbl.insert_cell(self)
-
 
 class DS_rule_checker:
     def __init__(self,text,ilvl=0,row=0,col=0,ccff=0):
@@ -235,8 +241,7 @@ def table_parsing(root,affTbl):
                             sv_tblId += 1
                             temp_inst_tbl = Tbl_DS(sv_tblId)
                             temp_inst_cell.insert_tbl(temp_inst_tbl)
-                            table_parsing(root_tbl)
-
+                            table_parsing(root_tbl,temp_inst_tbl)
 
 def print_out_srs(srs):
     for i in range(len(srs)):
@@ -293,7 +298,7 @@ def srs_parsing():
     global sv_tblId
     srs = [] # all srs block list
     tbl_list = [] # list only for table block
-    for block,root, ilvl_val,ccff in iter_block_items(doc): #ccff : cell_color_filled_flag
+    for block,root, ilvl_val,ccff in iter_block_items(doc): #ccff : csell_color_filled_flag
         if "Paragraph" in str(type(block)):
             if ccff == 1 :
                 srs.append(Paragraph_DS(block.text,ccff=ccff,ilvl=ilvl_val))
