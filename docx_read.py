@@ -49,6 +49,11 @@ def collectPrgrph(srs,tokenized_srs):
                 collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
     return tokenized_srs
 
+def _count(t):
+    return t[1]
+def _word(t):
+    return t[0]
+
 def makeDic(srs):
     tokenized_srs=[]
     tokenized_srs = collectPrgrph(srs,tokenized_srs)
@@ -58,8 +63,13 @@ def makeDic(srs):
     #print(embedding_model)
     #print(embedding_model.wv)
     #print(embedding_model.wv.vocab)
+    word_hist=[]
     for w in embedding_model.wv.vocab:
-        print(w,embedding_model.wv.vocab[w].count)
+        word_hist_instance = (w,embedding_model.wv.vocab[w].count)
+        word_hist.append(word_hist_instance)
+    word_hist.sort(key=_count)
+    print(word_hist)
+
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None):
