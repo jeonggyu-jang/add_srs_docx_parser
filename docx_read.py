@@ -16,7 +16,7 @@ import datetime
 pos_printout = 0 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
-doc = docx.Document('Use_case_0302.docx')
+doc = docx.Document('표적관리_SRS.docx')
 global sv_tblId #shared variable for table ID numbering
 sv_tblId = 0
 
@@ -39,7 +39,7 @@ def tokenizePrgrph(prgrph):
             tokenized_prgrph.append(prgrph.t_tree[i][0])
     return tokenized_prgrph
 
-def collectPrgrph(srs,tokenized_srs):
+def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS):
             tokenized_srs.append(tokenizePrgrph(srs[i]))
@@ -49,6 +49,27 @@ def collectPrgrph(srs,tokenized_srs):
                 collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
     return tokenized_srs
 
+def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
+    for i in range(len(srs)):
+        if isinstance(srs[i],Paragraph_DS) and tblflag==1:
+            tokenized_srs.append(tokenizePrgrph(srs[i]))
+        elif isinstance(srs[i],Tbl_DS) and tblflag==0: #only the (2,2)cell is selected in table (is not in table)
+            try :
+                if srs[i].find_cell(2,1).prgrphs[0].text == '요구사항' :
+                    collect_SRS_Prgrph(srs[i].find_cell(2,2).prgrphs,tokenized_srs,tblflag=1)
+                    collect_SRS_Prgrph(srs[i].find_cell(2,2).tbls,tokenized_srs,tblflag=1)
+            except :
+                pass
+        elif isinstance(srs[i],Tbl_DS) and tblflag==1: #all cells of the table in table are selected
+            try :
+                for j in range(len(srs[i].cells)):
+                    cell_t = srs[i].cells[j].get('cell')
+                    collect_SRS_Prgrph(cell_t.prgrphs,tokenized_srs,tblflag=1)
+                    collect_SRS_Prgrph(cell_t.tbls,tokenized_srs,tblflag=1)
+            except :
+                pass
+    return tokenized_srs
+
 def _count(t):
     return t[1]
 def _word(t):
@@ -56,13 +77,16 @@ def _word(t):
 
 def makeDic(srs):
     tokenized_srs=[]
-    tokenized_srs = collectPrgrph(srs,tokenized_srs)
+    #tokenized_srs = collectPrgrph(srs,tokenized_srs)
+    tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
+    #print(tokenized_srs)
     embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
     embedding_model.init_sims(replace=True)
     embedding_model.save("word2vec_result.model")
     #print(embedding_model)
     #print(embedding_model.wv)
     #print(embedding_model.wv.vocab)
+    #print(embedding_model.most_similar(positive=["표적"], topn=100))
     word_hist=[]
     for w in embedding_model.wv.vocab:
         word_hist_instance = (w,embedding_model.wv.vocab[w].count)
@@ -352,8 +376,8 @@ def srs_parsing():
             srs.append(temp_inst_tbl)
             tbl_list.append(temp_inst_tbl)
             table_parsing(root,temp_inst_tbl)
-    #print(srs)
-    #print_out_srs(srs)
+    print(srs)
+    print_out_srs(srs)
     makeDic(srs)
 
 srs_parsing()
