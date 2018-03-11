@@ -55,11 +55,11 @@ def makeDic(srs):
     embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
     embedding_model.init_sims(replace=True)
     embedding_model.save("word2vec_result.model")
-    print(embedding_model)
-    print(embedding_model.wv)
+    #print(embedding_model)
+    #print(embedding_model.wv)
     #print(embedding_model.wv.vocab)
     for w in embedding_model.wv.vocab:
-        print
+        print(w,embedding_model.wv.vocab[w].count)
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None):
