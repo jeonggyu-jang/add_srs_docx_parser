@@ -1,4 +1,5 @@
 import os
+from gensim.models import Word2Vec
 import docx
 from docx.document import Document
 from docx.oxml.table import *
@@ -22,7 +23,7 @@ sv_tblId = 0
 def passive_check(tree):
     violation_flag=0
     passive_DB = ['되','어지','받','당하','이','히','리','기']
-    print(tree)
+    #print(tree)
     for i in range(len(tree)):
         for j in range(len(passive_DB)):
             if passive_DB[j] in tree[i][0] and ('N' != tree[i][1][0] and 'J' != tree[i][1][0] ):
@@ -30,6 +31,35 @@ def passive_check(tree):
                 print(": There is \"%s\" in \"%s\"[%d]"%(passive_DB[j],tree[i][0],i))
                 violation_flag = 1
     return violation_flag
+
+def tokenizePrgrph(prgrph):
+    tokenized_prgrph = []
+    for i in range(len(prgrph.t_tree)):
+        if prgrph.t_tree[i][1][0] == 'N':
+            tokenized_prgrph.append(prgrph.t_tree[i][0])
+    return tokenized_prgrph
+
+def collectPrgrph(srs,tokenized_srs):
+    for i in range(len(srs)):
+        if isinstance(srs[i],Paragraph_DS):
+            tokenized_srs.append(tokenizePrgrph(srs[i]))
+        elif isinstance(srs[i],Tbl_DS):
+            for j in range(len(srs[i].cells)):
+                collectPrgrph(srs[i].cells[j].get('cell').prgrphs,tokenized_srs)
+                collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
+    return tokenized_srs
+
+def makeDic(srs):
+    tokenized_srs=[]
+    tokenized_srs = collectPrgrph(srs,tokenized_srs)
+    embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
+    embedding_model.init_sims(replace=True)
+    embedding_model.save("word2vec_result.model")
+    print(embedding_model)
+    print(embedding_model.wv)
+    #print(embedding_model.wv.vocab)
+    for w in embedding_model.wv.vocab:
+        print
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None):
@@ -313,6 +343,7 @@ def srs_parsing():
             tbl_list.append(temp_inst_tbl)
             table_parsing(root,temp_inst_tbl)
     #print(srs)
-    print_out_srs(srs)
+    #print_out_srs(srs)
+    makeDic(srs)
 
 srs_parsing()
