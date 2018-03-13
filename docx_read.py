@@ -13,6 +13,7 @@ from konlpy.tag import Kkma, Twitter
 from konlpy.utils import pprint
 import datetime
 
+
 pos_printout = 1 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
@@ -44,13 +45,16 @@ def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
     i=0
     while i <= (len(prgrph.tree)-1):
         comNoun = str()
-        if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][1] == 'SW' or prgrph.tree[i][1] == 'XSN':
+        if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][0] == '-' or prgrph.tree[i][1] == 'XSN': #have to add 'NR' !!!!!!!!!!!
             comNoun += prgrph.tree[i][0]
             for j in range(i+1,len(prgrph.tree)):
-                if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][1] != 'SW' and prgrph.tree[i][1] != 'XSN':
+                if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[i][1] != 'XSN':
                     print(comNoun)
                     i = j
                     break
+                elif j+1 == len(prgrph.tree):
+                    comNoun += prgrph.tree[j][0]
+                    i = j
                 else :
                     comNoun += prgrph.tree[j][0]
             tokenized_prgrph.append(comNoun)
