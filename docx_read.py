@@ -13,7 +13,7 @@ from konlpy.tag import Kkma, Twitter
 from konlpy.utils import pprint
 import datetime
 
-pos_printout = 0 #print out pos tree
+pos_printout = 1 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
 doc = docx.Document('표적관리_SRS.docx')
@@ -32,11 +32,25 @@ def passive_check(tree):
                 violation_flag = 1
     return violation_flag
 
-def tokenizePrgrph(prgrph):
+def tokenizePrgrph_unitN(prgrph): #Selecting just unit Noun
     tokenized_prgrph = []
-    for i in range(len(prgrph.t_tree)):
-        if prgrph.t_tree[i][1][0] == 'N':
-            tokenized_prgrph.append(prgrph.t_tree[i][0])
+    for i in range(len(prgrph.tree)):
+        if prgrph.tree[i][1] == 'NNG' or prgrph.tree[i][1] == 'NNP' or prgrph.tree[i][1] == 'OL':
+            tokenized_prgrph.append(prgrph.tree[i][0])
+    return tokenized_prgrph
+
+def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
+    tokenized_prgrph = []
+    for i in range(len(prgrph.tree)):
+        if prgrph.tree[i][1] == 'NNG' or prgrph.tree[i][1] == 'NNP' or prgrph.tree[i][1] == 'OL':
+            tokenized_prgrph.append(prgrph.tree[i][0])
+    return tokenized_prgrph
+
+def tokenizePrgrph_N_XSV(prgrph): #Selecting just N + XSV
+    tokenized_prgrph = []
+    for i in range(len(prgrph.tree)):
+        if prgrph.tree[i][1] == 'NNG' or prgrph.tree[i][1] == 'NNP' or prgrph.tree[i][1] == 'OL':
+            tokenized_prgrph.append(prgrph.tree[i][0])
     return tokenized_prgrph
 
 def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
@@ -49,7 +63,7 @@ def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
                 collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
     return tokenized_srs
 
-def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
+def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0): # only Noun
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
             tokenized_srs.append(tokenizePrgrph(srs[i]))
@@ -105,9 +119,10 @@ class Paragraph_DS:
         self.t_tree = None
         self.twitter_pos()
         self.kkma_pos()
-        self.violation_flag = passive_check(self.t_tree)
-        if self.violation_flag == 0 :
-            self.violation_flag = passive_check(self.tree)
+        self.violation_flag = 0
+        # self.violation_flag = passive_check(self.t_tree)
+        # if self.violation_flag == 0 :
+        #     self.violation_flag = passive_check(self.tree)
     def kkma_pos(self):
         kkma=Kkma()
         try :
@@ -376,7 +391,7 @@ def srs_parsing():
             srs.append(temp_inst_tbl)
             tbl_list.append(temp_inst_tbl)
             table_parsing(root,temp_inst_tbl)
-    print(srs)
+    #print(srs)
     print_out_srs(srs)
     makeDic(srs)
 
