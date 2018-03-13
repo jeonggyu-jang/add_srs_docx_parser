@@ -41,16 +41,27 @@ def tokenizePrgrph_unitN(prgrph): #Selecting just unit Noun
 
 def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
     tokenized_prgrph = []
-    for i in range(len(prgrph.tree)):
-        if prgrph.tree[i][1] == 'NNG' or prgrph.tree[i][1] == 'NNP' or prgrph.tree[i][1] == 'OL':
-            tokenized_prgrph.append(prgrph.tree[i][0])
+    i=0
+    while i <= (len(prgrph.tree)-1):
+        comNoun = str()
+        if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][1] == 'SW' or prgrph.tree[i][1] == 'XSN':
+            comNoun += prgrph.tree[i][0]
+            for j in range(i+1,len(prgrph.tree)):
+                if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][1] != 'SW' and prgrph.tree[i][1] != 'XSN':
+                    print(comNoun)
+                    i = j
+                    break
+                else :
+                    comNoun += prgrph.tree[j][0]
+            tokenized_prgrph.append(comNoun)
+        i += 1
     return tokenized_prgrph
 
 def tokenizePrgrph_N_XSV(prgrph): #Selecting just N + XSV
     tokenized_prgrph = []
-    for i in range(len(prgrph.tree)):
-        if prgrph.tree[i][1] == 'NNG' or prgrph.tree[i][1] == 'NNP' or prgrph.tree[i][1] == 'OL':
-            tokenized_prgrph.append(prgrph.tree[i][0])
+    for i in range(len(prgrph.tree)-1):
+        if prgrph.tree[i][1][0:2] == 'NN' and prgrph.tree[i+1][1] == 'XSV':
+            tokenized_prgrph.append(prgrph.tree[i][0] + '하다')
     return tokenized_prgrph
 
 def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
@@ -63,10 +74,11 @@ def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
                 collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
     return tokenized_srs
 
-def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0): # only Noun
+def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
-            tokenized_srs.append(tokenizePrgrph(srs[i]))
+            tokenized_srs.append(tokenizePrgrph_comNoun(srs[i]))
+            tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
         elif isinstance(srs[i],Tbl_DS) and tblflag==0: #only the (2,2)cell is selected in table (is not in table)
             try :
                 if srs[i].find_cell(2,1).prgrphs[0].text == '요구사항' :
@@ -82,6 +94,7 @@ def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0): # only Noun
                     collect_SRS_Prgrph(cell_t.tbls,tokenized_srs,tblflag=1)
             except :
                 pass
+    #print('[tokenized_srs]',tokenized_srs)
     return tokenized_srs
 
 def _count(t):
@@ -106,7 +119,8 @@ def makeDic(srs):
         word_hist_instance = (w,embedding_model.wv.vocab[w].count)
         word_hist.append(word_hist_instance)
     word_hist.sort(key=_count)
-    print(word_hist)
+    for i in word_hist:
+        print(i)
 
 
 class Paragraph_DS:
