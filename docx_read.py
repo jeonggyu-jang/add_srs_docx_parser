@@ -45,19 +45,36 @@ def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
     i=0
     while i <= (len(prgrph.tree)-1):
         comNoun = str()
-        if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][0] == '-' or prgrph.tree[i][1] == 'XSN': #have to add 'NR' !!!!!!!!!!!
-            comNoun += prgrph.tree[i][0]
-            for j in range(i+1,len(prgrph.tree)):
-                if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[i][1] != 'XSN':
-                    print(comNoun)
-                    i = j
-                    break
-                elif j+1 == len(prgrph.tree):
-                    comNoun += prgrph.tree[j][0]
-                    i = j
+        if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][0] == '-' or prgrph.tree[i][1] == 'XSN' or prgrph.tree[i][1] == 'JKG': #have to add 'NR' !!!!!!!!!!!
+            try :
+                if prgrph.tree[i-1][1][0] == 'J' and prgrph.tree[i+1][1] == 'XSV':
+                    tokenized_prgrph.append(prgrph.tree[i][0] + '하다')
                 else :
-                    comNoun += prgrph.tree[j][0]
-            tokenized_prgrph.append(comNoun)
+                    comNoun += prgrph.tree[i][0]
+                    for j in range(i+1,len(prgrph.tree)):
+                        if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[j][1] != 'XSN' and prgrph.tree[j][1] != 'JKG':
+                            print(comNoun)
+                            i = j
+                            break
+                        elif j+1 == len(prgrph.tree):
+                            comNoun += prgrph.tree[j][0]
+                            i = j
+                        else :
+                            comNoun += prgrph.tree[j][0]
+                    tokenized_prgrph.append(comNoun)
+            except :
+                comNoun += prgrph.tree[i][0]
+                for j in range(i+1,len(prgrph.tree)):
+                    if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[j][1] != 'XSN' and prgrph.tree[j][1] != 'JKG':
+                        print(comNoun)
+                        i = j
+                        break
+                    elif j+1 == len(prgrph.tree):
+                        comNoun += prgrph.tree[j][0]
+                        i = j
+                    else :
+                        comNoun += prgrph.tree[j][0]
+                tokenized_prgrph.append(comNoun)
         i += 1
     return tokenized_prgrph
 
@@ -82,7 +99,7 @@ def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
             tokenized_srs.append(tokenizePrgrph_comNoun(srs[i]))
-            tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
+            #tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
         elif isinstance(srs[i],Tbl_DS) and tblflag==0: #only the (2,2)cell is selected in table (is not in table)
             try :
                 if srs[i].find_cell(2,1).prgrphs[0].text == '요구사항' :
@@ -98,7 +115,6 @@ def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
                     collect_SRS_Prgrph(cell_t.tbls,tokenized_srs,tblflag=1)
             except :
                 pass
-    #print('[tokenized_srs]',tokenized_srs)
     return tokenized_srs
 
 def _count(t):
@@ -110,6 +126,10 @@ def makeDic(srs):
     tokenized_srs=[]
     #tokenized_srs = collectPrgrph(srs,tokenized_srs)
     tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
+    print("[tokenized srs]")
+    for i in tokenized_srs:
+        if i != [] :
+            print(i)
     #print(tokenized_srs)
     embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
     embedding_model.init_sims(replace=True)
