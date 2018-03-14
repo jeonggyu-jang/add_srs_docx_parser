@@ -7,12 +7,11 @@ from docx.oxml.text.paragraph import CT_P
 from docx.table import _Cell, Table
 from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
-from openpyxl import load_workbook, Workbook
-from openpyxl.styles import Border, Side, Font, Alignment, PatternFill, Color
 from konlpy.tag import Kkma, Twitter
-from konlpy.utils import pprint
-import datetime
+
 from template import *
+from xlout import *
+
 req_printout = 0
 pos_printout = 1 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
@@ -88,6 +87,7 @@ def tokenizePrgrph_comNoun_kkma(prgrph): #Selecting just compound Noun
 def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
     tokenized_prgrph = []
     reqId = prgrph.reqId
+    ilvl = prgrph.ilvl
     i=0
     while i <= (len(prgrph.t_tree)-1):
         comNoun = str()
@@ -96,7 +96,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                 and (prgrph.t_tree[i][0] != '와' and prgrph.t_tree[i][0] != '다음') :#have to add 'NR' !!!!!!!!!!!
             try :
                 if prgrph.t_tree[i+1][0] == '하다':
-                    newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId}
+                    newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId,'ilvl':ilvl}
                     tokenized_prgrph.append(newDict)
                 else :
                     comNoun += prgrph.t_tree[i][0]
@@ -112,7 +112,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                             i = j
                         else :
                             comNoun += prgrph.t_tree[j][0]
-                    newDict = {'word':comNoun,'reqId':reqId}
+                    newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl}
                     tokenized_prgrph.append(newDict)
             except :
                 comNoun += prgrph.t_tree[i][0]
@@ -128,7 +128,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                         i = j
                     else :
                         comNoun += prgrph.t_tree[j][0]
-                newDict = {'word':comNoun,'reqId':reqId}
+                newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl}
                 tokenized_prgrph.append(newDict)
         i += 1
     return tokenized_prgrph
@@ -232,6 +232,7 @@ def makeDic(srs):
     print("- - - - - [Histogram] - - - - -")
     for i in word_hist:
         print(i)
+    return tokenized_srs
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None,reqId=None,affCell=None):
@@ -325,7 +326,7 @@ class Cell_DS:
         for i in self.prgrphs:
             i.reqId = self.reqId
         for i in self.tbls:
-            i.reqId.InitReqId()
+            i.InitReqId()
 
 class DS_rule_checker:
     def __init__(self,text,ilvl=0,row=0,col=0,ccff=0):
@@ -533,6 +534,33 @@ def Init_SRS_ReqId(tbl_list):
     for i in tbl_list:
         i.InitReqId()
 
+class Out_DS:
+    def __init__(self,ilvl=None,reqId=None,template=None):
+        self.words=[]
+        self.ilvl = ilvl
+        self.reqId = reqId
+        self.template = template
+    def insert_word(self,word):
+        self.words.append(word)
+
+def srs_analysis(t_srs):
+    f_srs={}
+    for p in t_srs:
+        try:
+            reqId = p[0].get('reqId')
+            req_list = f_srs.get(reqId)
+            if req_list == None:
+                f_srs[reqId] = []
+                req_list = f_srs.get(reqId)
+            t_out_ds = Out_DS(ilvl=p[0].get('ilvl'),reqId=reqId)
+            req_list.append(t_out_ds)
+            for w in p :
+                t_out_ds.insert_word(w.get('word'))
+        except:
+            pass
+    return f_srs
+
+
 def srs_parsing():
     global sv_tblId
     srs = [] # all srs block list
@@ -553,8 +581,24 @@ def srs_parsing():
             table_parsing(root,temp_inst_tbl)
     Init_SRS_ReqId(tbl_list)
     #print(srs)
-    print_out_srs(srs)
+    #print_out_srs(srs)
     #makeDic_w2v(srs)
-    makeDic(srs)
+    tokenized_srs = makeDic(srs)
+    print(tokenized_srs)
+    final_srs = srs_analysis(tokenized_srs)
+
+    for reqId in list(final_srs.keys()):
+        print('-----',reqId,'-----')
+        try :
+            o_ds_list = final_srs.get(reqId)
+            for o_ds in o_ds_list:
+                print('  [',o_ds.ilvl,']',end=' ')
+                for w in o_ds.words:
+                    print(w,end=' ')
+                print('')
+        except:
+            pass
+
+    srs_out(final_srs)
 
 srs_parsing()
