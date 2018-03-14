@@ -12,8 +12,8 @@ from openpyxl.styles import Border, Side, Font, Alignment, PatternFill, Color
 from konlpy.tag import Kkma, Twitter
 from konlpy.utils import pprint
 import datetime
-
-
+from template import *
+req_printout = 0
 pos_printout = 1 #print out pos tree
 os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
@@ -33,6 +33,9 @@ def passive_check(tree):
                 violation_flag = 1
     return violation_flag
 
+def findReqId(tbl):
+    return 0
+
 def tokenizePrgrph_unitN(prgrph): #Selecting just unit Noun
     tokenized_prgrph = []
     for i in range(len(prgrph.tree)):
@@ -40,20 +43,22 @@ def tokenizePrgrph_unitN(prgrph): #Selecting just unit Noun
             tokenized_prgrph.append(prgrph.tree[i][0])
     return tokenized_prgrph
 
-def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
+def tokenizePrgrph_comNoun_kkma(prgrph): #Selecting just compound Noun
     tokenized_prgrph = []
+    reqId = prgrph.reqId
     i=0
     while i <= (len(prgrph.tree)-1):
         comNoun = str()
         if prgrph.tree[i][1][0:2] == 'NN' or prgrph.tree[i][1] == 'OL' or prgrph.tree[i][0] == '-' or prgrph.tree[i][1] == 'XSN' or prgrph.tree[i][1] == 'JKG': #have to add 'NR' !!!!!!!!!!!
             try :
                 if prgrph.tree[i-1][1][0] == 'J' and prgrph.tree[i+1][1] == 'XSV':
-                    tokenized_prgrph.append(prgrph.tree[i][0] + '하다')
+                    newDict = {'word':prgrph.tree[i][0] + '하다','reqId':reqId}
+                    tokenized_prgrph.append(newDict)
                 else :
                     comNoun += prgrph.tree[i][0]
                     for j in range(i+1,len(prgrph.tree)):
                         if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[j][1] != 'XSN' and prgrph.tree[j][1] != 'JKG':
-                            print(comNoun)
+                            #print(comNoun)
                             i = j
                             break
                         elif j+1 == len(prgrph.tree):
@@ -61,12 +66,13 @@ def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
                             i = j
                         else :
                             comNoun += prgrph.tree[j][0]
-                    tokenized_prgrph.append(comNoun)
+                    newDict = {'word':comNoun,'reqId':reqId}
+                    tokenized_prgrph.append(newDict)
             except :
                 comNoun += prgrph.tree[i][0]
                 for j in range(i+1,len(prgrph.tree)):
                     if prgrph.tree[j][1][0:2] != 'NN' and prgrph.tree[j][1] != 'OL' and prgrph.tree[j][0] != '-' and prgrph.tree[j][1] != 'XSN' and prgrph.tree[j][1] != 'JKG':
-                        print(comNoun)
+                        #print(comNoun)
                         i = j
                         break
                     elif j+1 == len(prgrph.tree):
@@ -74,7 +80,56 @@ def tokenizePrgrph_comNoun(prgrph): #Selecting just compound Noun
                         i = j
                     else :
                         comNoun += prgrph.tree[j][0]
-                tokenized_prgrph.append(comNoun)
+                newDict = {'word':comNoun,'reqId':reqId}
+                tokenized_prgrph.append(newDict)
+        i += 1
+    return tokenized_prgrph
+
+def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
+    tokenized_prgrph = []
+    reqId = prgrph.reqId
+    i=0
+    while i <= (len(prgrph.t_tree)-1):
+        comNoun = str()
+        if (prgrph.t_tree[i][1] == 'Noun' or prgrph.t_tree[i][0] == '-' or prgrph.t_tree[i][1] == 'Alpha' \
+                or prgrph.t_tree[i][0] == '/' or prgrph.t_tree[i][1] == 'Number') \
+                and (prgrph.t_tree[i][0] != '와' and prgrph.t_tree[i][0] != '다음') :#have to add 'NR' !!!!!!!!!!!
+            try :
+                if prgrph.t_tree[i+1][0] == '하다':
+                    newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId}
+                    tokenized_prgrph.append(newDict)
+                else :
+                    comNoun += prgrph.t_tree[i][0]
+                    for j in range(i+1,len(prgrph.t_tree)):
+                        if (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
+                                and prgrph.t_tree[j][0] != '/' and prgrph.t_tree[j][1] != 'Number')\
+                                or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :#have to add 'NR' !!!!!!!!!!!
+                            #print(comNoun)
+                            i = j
+                            break
+                        elif j+1 == len(prgrph.t_tree):
+                            comNoun += prgrph.t_tree[j][0]
+                            i = j
+                        else :
+                            comNoun += prgrph.t_tree[j][0]
+                    newDict = {'word':comNoun,'reqId':reqId}
+                    tokenized_prgrph.append(newDict)
+            except :
+                comNoun += prgrph.t_tree[i][0]
+                for j in range(i+1,len(prgrph.t_tree)):
+                    if (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
+                            and prgrph.t_tree[j][0] != '/' and prgrph.t_tree[j][1] != 'Number')\
+                            or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :#have to add 'NR' !!!!!!!!!!!
+                        #print(comNoun)
+                        i = j
+                        break
+                    elif j+1 == len(prgrph.t_tree):
+                        comNoun += prgrph.t_tree[j][0]
+                        i = j
+                    else :
+                        comNoun += prgrph.t_tree[j][0]
+                newDict = {'word':comNoun,'reqId':reqId}
+                tokenized_prgrph.append(newDict)
         i += 1
     return tokenized_prgrph
 
@@ -98,7 +153,7 @@ def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
 def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
-            tokenized_srs.append(tokenizePrgrph_comNoun(srs[i]))
+            tokenized_srs.append(tokenizePrgrph_comNoun_twitter(srs[i]))
             #tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
         elif isinstance(srs[i],Tbl_DS) and tblflag==0: #only the (2,2)cell is selected in table (is not in table)
             try :
@@ -121,8 +176,13 @@ def _count(t):
     return t[1]
 def _word(t):
     return t[0]
+def makeReqIdDic(reqIdDic,tokenized_srs):
+    for i in tokenized_srs:
+        for j in i:
+            word = j.get('word')
+            reqId = j.get('reqId')
 
-def makeDic(srs):
+def makeDic_w2v(srs): #tokenized_srs를 튜플리스트로 바꾸었기때문에 makeDic_w2v에서 사용하기위해 word만 추출하는 코드 추가해야함 - jjg 03/14
     tokenized_srs=[]
     #tokenized_srs = collectPrgrph(srs,tokenized_srs)
     tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
@@ -146,9 +206,36 @@ def makeDic(srs):
     for i in word_hist:
         print(i)
 
+def makeDic(srs):
+    reqIdDic = []
+    tokenized_srs=[]
+    tokenized_srs4w2v = []
+    tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
+    for i in tokenized_srs:
+        list_t = list()
+        for j in i:
+            word_t = j.get('word')
+            list_t.append(word_t)
+            print(word_t,j.get('reqId'))
+        tokenized_srs4w2v.append(list_t)
+    embedding_model = Word2Vec(tokenized_srs4w2v,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
+    embedding_model.init_sims(replace=True)
+    embedding_model.save("word2vec_result.model")
+    word_hist=[]
+    for w in embedding_model.wv.vocab:
+        word_hist_instance = (w,embedding_model.wv.vocab[w].count)
+        word_hist.append(word_hist_instance)
+    word_hist.sort(key=_count)
+    print("- - - - - [Dictionary] - - - - -")
+    reqIdDic = makeReqIdDic(reqIdDic,tokenized_srs)
+    print(reqIdDic)
+    print("- - - - - [Histogram] - - - - -")
+    for i in word_hist:
+        print(i)
 
 class Paragraph_DS:
-    def __init__(self,text,ilvl=0,ccff=None,name=None):
+    def __init__(self,text,ilvl=0,ccff=None,name=None,reqId=None,affCell=None):
+        self.reqId= reqId
         self.text = text
         self.ilvl = ilvl
         self.ccff = ccff
@@ -158,6 +245,7 @@ class Paragraph_DS:
         self.twitter_pos()
         self.kkma_pos()
         self.violation_flag = 0
+        self.affCell = affCell
         # self.violation_flag = passive_check(self.t_tree)
         # if self.violation_flag == 0 :
         #     self.violation_flag = passive_check(self.tree)
@@ -176,11 +264,13 @@ class Paragraph_DS:
             pass
 
 class Tbl_DS:
-    def __init__(self,tblId,newCell=None):
+    def __init__(self,tblId,newCell=None,reqId=None,affCell=None):
+        self.reqId = reqId
         self.ttlNmbRow = 0
         self.ttlNmbCol = 0
         self.cells = []
         self.tblId = tblId
+        self.affCell = affCell
         if newCell != None :
             self.insert_cell(newCell)
     def insert_cell(self,newCell):
@@ -196,9 +286,24 @@ class Tbl_DS:
             col_t = self.cells[i].get('col')
             if row == row_t and col == col_t :
                 return self.cells[i].get('cell')
+    def InitReqId(self):
+        for i in range(len(self.cells)):
+            cell_t = self.cells[i].get('cell')
+            if cell_t.prgrphs[0].text == '식 별 자':
+                row_t = self.cells[i].get('row')
+                col_t = self.cells[i].get('col')
+                reqId_cell = self.find_cell(row_t,col_t+1)
+                self.reqId = reqId_cell.prgrphs[0].text
+                for j in self.cells:
+                    j.get('cell').InitReqId()
+                return reqId_cell.prgrphs[0].text
+        if self.affCell != None:
+            self.reqId = self.affCell.reqId
+
 
 class Cell_DS:
-    def __init__(self,affTbl,row,col,newPrgrph=None,newTbl=None):
+    def __init__(self,affTbl,row,col,newPrgrph=None,newTbl=None,reqId=None):
+        self.reqId = reqId
         self.prgrphs = []
         self.row = row
         self.col = col
@@ -215,6 +320,12 @@ class Cell_DS:
         self.tbls.append(newTbl)
     def affilate_tbl(self):
         self.affTbl.insert_cell(self)
+    def InitReqId(self):
+        self.reqId = self.affTbl.reqId
+        for i in self.prgrphs:
+            i.reqId = self.reqId
+        for i in self.tbls:
+            i.reqId.InitReqId()
 
 class DS_rule_checker:
     def __init__(self,text,ilvl=0,row=0,col=0,ccff=0):
@@ -349,14 +460,14 @@ def table_parsing(root,affTbl):
                                 #if i != ilvl_val-1 : print("     ",end="")
                                 #else : print("   L__",end="")
                             if ccff == 1 :
-                                temp_inst_cell.insert_prgrph(Paragraph_DS(block.text,ccff=ccff,ilvl=ilvl_val))
+                                temp_inst_cell.insert_prgrph(Paragraph_DS(block.text,ccff=ccff,ilvl=ilvl_val,affCell=temp_inst_cell))
                                 #print ('__%s ||%s||'%(str(ilvl_val),block.text))
                             else :
-                                temp_inst_cell.insert_prgrph(Paragraph_DS(block.text,ilvl=ilvl_val))
+                                temp_inst_cell.insert_prgrph(Paragraph_DS(block.text,ilvl=ilvl_val,affCell=temp_inst_cell))
                                 #print ('__%s %s'%(str(ilvl_val),block.text))
                         elif "Table" in str(type(block)):
                             sv_tblId += 1
-                            temp_inst_tbl = Tbl_DS(sv_tblId)
+                            temp_inst_tbl = Tbl_DS(sv_tblId,affCell=temp_inst_cell)
                             temp_inst_cell.insert_tbl(temp_inst_tbl)
                             table_parsing(root_tbl,temp_inst_tbl)
 
@@ -368,6 +479,8 @@ def print_out_srs(srs):
                 else : print("   L__",end="")
             if srs[i].ccff == 1 :
                 print ('__%s ||%s||'%(str(srs[i].ilvl),srs[i].text))
+                if req_printout == 1:
+                    print('_%s_'%(srs[i].reqId))
                 if pos_printout == 1:
                     print ('_%s_'%(srs[i].tree))
                     print ('_%s_'%(srs[i].t_tree))
@@ -375,6 +488,8 @@ def print_out_srs(srs):
                     print('L__[Rule Violation!!]')
             else :
                 print ('__%s %s'%(str(srs[i].ilvl),srs[i].text))
+                if req_printout == 1:
+                    print('_%s_'%(srs[i].reqId))
                 if pos_printout == 1:
                     print ('_%s_'%(srs[i].tree))
                     print ('_%s_'%(srs[i].t_tree))
@@ -395,6 +510,8 @@ def print_out_table(table):
                 else : print("   L__",end="")
             if table.cells[i].get('cell').prgrphs[j].ccff == 1 :
                 print ('__%s ||%s||'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                if req_printout == 1:
+                    print('_%s_'%(table.cells[i].get('cell').prgrphs[j].reqId))
                 if pos_printout == 1:
                     print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
                     print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].t_tree))
@@ -402,6 +519,8 @@ def print_out_table(table):
                     print('L__[Rule Violation!!]')
             else :
                 print ('__%s %s'%(str(table.cells[i].get('cell').prgrphs[j].ilvl),table.cells[i].get('cell').prgrphs[j].text))
+                if req_printout == 1:
+                    print('_%s_'%(table.cells[i].get('cell').prgrphs[j].reqId))
                 if pos_printout == 1:
                     print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].tree))
                     print ('_%s_'%(table.cells[i].get('cell').prgrphs[j].t_tree))
@@ -410,6 +529,9 @@ def print_out_table(table):
         for j in range(len(table.cells[i].get('cell').tbls)):
             print_out_table(table.cells[i].get('cell').tbls[j])
 
+def Init_SRS_ReqId(tbl_list):
+    for i in tbl_list:
+        i.InitReqId()
 
 def srs_parsing():
     global sv_tblId
@@ -429,8 +551,10 @@ def srs_parsing():
             srs.append(temp_inst_tbl)
             tbl_list.append(temp_inst_tbl)
             table_parsing(root,temp_inst_tbl)
+    Init_SRS_ReqId(tbl_list)
     #print(srs)
     print_out_srs(srs)
+    #makeDic_w2v(srs)
     makeDic(srs)
 
 srs_parsing()
