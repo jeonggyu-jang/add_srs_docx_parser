@@ -9,12 +9,12 @@ from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
 from konlpy.tag import Kkma, Twitter
 
-from template import *
+#from template import *
 from xlout import *
 
 req_printout = 0
 pos_printout = 1 #print out pos tree
-os.chdir('C:\\Users\\mocolab\\PycharmProjects\\add_parser_docx_ver') #docx file directory
+os.chdir('C:\\Users\\Jony\\PycharmProjects\\RP\\add_srs_docx_parser4') #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
 doc = docx.Document('표적관리_SRS.docx')
 global sv_tblId #shared variable for table ID numbering
@@ -318,6 +318,10 @@ class Tbl_DS:
             if row == row_t and col == col_t :
                 return self.cells[i].get('cell')
     def InitReqId(self):
+        if self.affCell != None:
+            self.reqId = self.affCell.reqId
+            for j in self.cells:
+                j.get('cell').InitReqId()
         for i in range(len(self.cells)):
             cell_t = self.cells[i].get('cell')
             if cell_t.prgrphs[0].text == '식 별 자' or cell_t.prgrphs[0].text == '식별자' :
@@ -328,8 +332,7 @@ class Tbl_DS:
                 for j in self.cells:
                     j.get('cell').InitReqId()
                 return reqId_cell.prgrphs[0].text
-        if self.affCell != None:
-            self.reqId = self.affCell.reqId
+
 
 class Cell_DS:
     def __init__(self,affTbl,row,col,newPrgrph=None,newTbl=None,reqId=None):
@@ -590,7 +593,6 @@ def srs_analysis(t_srs):
             pass
     return f_srs
 
-
 def srs_parsing():
     global sv_tblId
     srs = [] # all srs block list
@@ -614,8 +616,9 @@ def srs_parsing():
     print_out_srs(srs)
     #makeDic_w2v(srs)
     tokenized_srs = makeDic(srs)
+    print(tokenized_srs)
     final_srs = srs_analysis(tokenized_srs)
-    print(final_srs)
+    #print(final_srs)
     for reqId in list(final_srs.keys()):
         print('-----',reqId,'-----')
         try :
