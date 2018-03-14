@@ -32,9 +32,6 @@ def passive_check(tree):
                 violation_flag = 1
     return violation_flag
 
-def findReqId(tbl):
-    return 0
-
 def tokenizePrgrph_unitN(prgrph): #Selecting just unit Noun
     tokenized_prgrph = []
     for i in range(len(prgrph.tree)):
@@ -88,6 +85,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
     tokenized_prgrph = []
     reqId = prgrph.reqId
     ilvl = prgrph.ilvl
+    template=prgrph.template
     i=0
     while i <= (len(prgrph.t_tree)-1):
         comNoun = str()
@@ -96,7 +94,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                 and (prgrph.t_tree[i][0] != '와' and prgrph.t_tree[i][0] != '다음') :#have to add 'NR' !!!!!!!!!!!
             try :
                 if prgrph.t_tree[i+1][0] == '하다':
-                    newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId,'ilvl':ilvl}
+                    newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId,'ilvl':ilvl,'template':template}
                     tokenized_prgrph.append(newDict)
                 else :
                     comNoun += prgrph.t_tree[i][0]
@@ -112,7 +110,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                             i = j
                         else :
                             comNoun += prgrph.t_tree[j][0]
-                    newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl}
+                    newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl,'template':template}
                     tokenized_prgrph.append(newDict)
             except :
                 comNoun += prgrph.t_tree[i][0]
@@ -128,7 +126,7 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
                         i = j
                     else :
                         comNoun += prgrph.t_tree[j][0]
-                newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl}
+                newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl,'template':template}
                 tokenized_prgrph.append(newDict)
         i += 1
     return tokenized_prgrph
@@ -176,11 +174,30 @@ def _count(t):
     return t[1]
 def _word(t):
     return t[0]
+
+def RmS (reqIdDic) :
+    i = 0
+    j = 1
+    while(i<len(reqIdDic)):
+        while(j<len(reqIdDic)):
+            if (reqIdDic[i][0] == reqIdDic[j][0]) :
+                if reqIdDic[i][1] == reqIdDic[j][1] :
+                    del(reqIdDic[j])
+                    j= i+1
+            j=j+1
+
+        i=i+1
+        j=i+1
+    return reqIdDic
+
 def makeReqIdDic(reqIdDic,tokenized_srs):
+    result_list=[]
     for i in tokenized_srs:
         for j in i:
             word = j.get('word')
             reqId = j.get('reqId')
+            result_list.append((word,reqId))
+    return result_list
 
 def makeDic_w2v(srs): #tokenized_srs를 튜플리스트로 바꾸었기때문에 makeDic_w2v에서 사용하기위해 word만 추출하는 코드 추가해야함 - jjg 03/14
     tokenized_srs=[]
@@ -226,12 +243,11 @@ def makeDic(srs):
         word_hist_instance = (w,embedding_model.wv.vocab[w].count)
         word_hist.append(word_hist_instance)
     word_hist.sort(key=_count)
-    print("- - - - - [Dictionary] - - - - -")
+    #print("- - - - - [Dictionary] - - - - -")
     reqIdDic = makeReqIdDic(reqIdDic,tokenized_srs)
-    print(reqIdDic)
-    print("- - - - - [Histogram] - - - - -")
-    for i in word_hist:
-        print(i)
+    #print(RmS(reqIdDic))
+    #print(reqIdDic)
+    srs2xl(reqIdDic)
     return tokenized_srs
 
 class Paragraph_DS:
@@ -246,10 +262,12 @@ class Paragraph_DS:
         self.twitter_pos()
         self.kkma_pos()
         self.violation_flag = 0
+        self.template = str()
         self.affCell = affCell
         # self.violation_flag = passive_check(self.t_tree)
         # if self.violation_flag == 0 :
         #     self.violation_flag = passive_check(self.tree)
+        self.whatTemplate()
     def kkma_pos(self):
         kkma=Kkma()
         try :
@@ -263,6 +281,18 @@ class Paragraph_DS:
             self.t_tree = twitter.pos(self.text,stem=True)
         except:
             pass
+    def whatTemplate(self):
+        if '.' in self.text:
+            if '종류는 다음과 같다.' in self.text:
+                self.template = 'is_a'
+            elif '다음과 같다.' in self.text:
+                self.template = 'has_a'
+            elif '다음과 같이 동작한다.' in self.text:
+                self.template = 'action_list'
+            else :
+                self.template = 'action'
+        else:
+            self.template = 'not_sentence'
 
 class Tbl_DS:
     def __init__(self,tblId,newCell=None,reqId=None,affCell=None):
@@ -290,7 +320,7 @@ class Tbl_DS:
     def InitReqId(self):
         for i in range(len(self.cells)):
             cell_t = self.cells[i].get('cell')
-            if cell_t.prgrphs[0].text == '식 별 자':
+            if cell_t.prgrphs[0].text == '식 별 자' or cell_t.prgrphs[0].text == '식별자' :
                 row_t = self.cells[i].get('row')
                 col_t = self.cells[i].get('col')
                 reqId_cell = self.find_cell(row_t,col_t+1)
@@ -300,7 +330,6 @@ class Tbl_DS:
                 return reqId_cell.prgrphs[0].text
         if self.affCell != None:
             self.reqId = self.affCell.reqId
-
 
 class Cell_DS:
     def __init__(self,affTbl,row,col,newPrgrph=None,newTbl=None,reqId=None):
@@ -548,11 +577,12 @@ def srs_analysis(t_srs):
     for p in t_srs:
         try:
             reqId = p[0].get('reqId')
+            template = p[0].get('template')
             req_list = f_srs.get(reqId)
             if req_list == None:
                 f_srs[reqId] = []
                 req_list = f_srs.get(reqId)
-            t_out_ds = Out_DS(ilvl=p[0].get('ilvl'),reqId=reqId)
+            t_out_ds = Out_DS(ilvl=p[0].get('ilvl'),reqId=reqId,template=template)
             req_list.append(t_out_ds)
             for w in p :
                 t_out_ds.insert_word(w.get('word'))
@@ -581,12 +611,11 @@ def srs_parsing():
             table_parsing(root,temp_inst_tbl)
     Init_SRS_ReqId(tbl_list)
     #print(srs)
-    #print_out_srs(srs)
+    print_out_srs(srs)
     #makeDic_w2v(srs)
     tokenized_srs = makeDic(srs)
-    print(tokenized_srs)
     final_srs = srs_analysis(tokenized_srs)
-
+    print(final_srs)
     for reqId in list(final_srs.keys()):
         print('-----',reqId,'-----')
         try :
@@ -595,10 +624,9 @@ def srs_parsing():
                 print('  [',o_ds.ilvl,']',end=' ')
                 for w in o_ds.words:
                     print(w,end=' ')
-                print('')
+                print(' ',o_ds.template)
         except:
             pass
-
     srs_out(final_srs)
 
 srs_parsing()
