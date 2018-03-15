@@ -8,13 +8,15 @@ from docx.table import _Cell, Table
 from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
 from konlpy.tag import Kkma, Twitter
-
+import copy
 #from template import *
 from xlout import *
+import sys
+
 
 req_printout = 0
 pos_printout = 1 #print out pos tree
-os.chdir('C:\\Users\\Jony\\PycharmProjects\\RP\\add_srs_docx_parser4') #docx file directory
+os.chdir(os.getcwd()) #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
 doc = docx.Document('표적관리_SRS.docx')
 global sv_tblId #shared variable for table ID numbering
@@ -148,27 +150,41 @@ def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
                 collectPrgrph(srs[i].cells[j].get('cell').tbls,tokenized_srs)
     return tokenized_srs
 
-def collect_SRS_Prgrph(srs,tokenized_srs,tblflag=0):
+def collect_SRS_Prgrph(srs,tokenized_srs,tokenized_usecase,tblflag=0,opt=0):
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
-            tokenized_srs.append(tokenizePrgrph_comNoun_twitter(srs[i]))
-            #tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
+            if opt == 0 : #srs
+                tokenized_srs.append(tokenizePrgrph_comNoun_twitter(srs[i]))
+                #tokenized_srs.append(tokenizePrgrph_N_XSV(srs[i]))
+            elif opt == 1 : #usecase
+                tokenized_usecase.append(tokenizePrgrph_comNoun_twitter(srs[i]))
         elif isinstance(srs[i],Tbl_DS) and tblflag==0: #only the (2,2)cell is selected in table (is not in table)
             try :
                 if srs[i].find_cell(2,1).prgrphs[0].text == '요구사항' :
-                    collect_SRS_Prgrph(srs[i].find_cell(2,2).prgrphs,tokenized_srs,tblflag=1)
-                    collect_SRS_Prgrph(srs[i].find_cell(2,2).tbls,tokenized_srs,tblflag=1)
+                    collect_SRS_Prgrph(srs[i].find_cell(2,2).prgrphs,tokenized_srs,tokenized_usecase,tblflag=1)
+                    collect_SRS_Prgrph(srs[i].find_cell(2,2).tbls,tokenized_srs,tokenized_usecase,tblflag=1)
+                elif srs[i].find_cell(1,1).prgrphs[0].text == '항 목' or srs[i].find_cell(1,1).prgrphs[0].text == '항목':
+                    matched_cells = srs[i].find_cell_by_text(['시나리오','(대안)'])
+                    for uc_c in range(2,4):
+                        if len(matched_cells) != 1 :
+                            print("matched_cells are not only one!")
+                            for m_c in matched_cells:
+                                m_row,m_col = m_c.row,m_c.col
+                        else :
+                            m_row,m_col = matched_cells[0].row,matched_cells[0].col
+                        for uc_r in range(8,m_row):
+                            collect_SRS_Prgrph(srs[i].find_cell(uc_r,uc_c).prgrphs,tokenized_srs,tokenized_usecase,tblflag=1,opt=1)
             except :
                 pass
-        elif isinstance(srs[i],Tbl_DS) and tblflag==1: #all cells of the table in table are selected
+        elif isinstance(srs[i],Tbl_DS) and tblflag==1: #all cells of the table in table are selected, usecase table can not have table in the table
             try :
                 for j in range(len(srs[i].cells)):
                     cell_t = srs[i].cells[j].get('cell')
-                    collect_SRS_Prgrph(cell_t.prgrphs,tokenized_srs,tblflag=1)
-                    collect_SRS_Prgrph(cell_t.tbls,tokenized_srs,tblflag=1)
+                    collect_SRS_Prgrph(cell_t.prgrphs,tokenized_srs,tokenized_usecase,tblflag=1)
+                    collect_SRS_Prgrph(cell_t.tbls,tokenized_srs,tokenized_usecase,tblflag=1)
             except :
                 pass
-    return tokenized_srs
+    return tokenized_srs, tokenized_usecase
 
 def _count(t):
     return t[1]
@@ -201,10 +217,11 @@ def makeReqIdDic(reqIdDic,tokenized_srs):
 
 def makeDic_w2v(srs): #tokenized_srs를 튜플리스트로 바꾸었기때문에 makeDic_w2v에서 사용하기위해 word만 추출하는 코드 추가해야함 - jjg 03/14
     tokenized_srs=[]
+    tokenized_usecase=[]
     #tokenized_srs = collectPrgrph(srs,tokenized_srs)
-    tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
-    print("[tokenized srs]")
-    for i in tokenized_srs:
+    tokenized_srs,tokenized_usecase = collect_SRS_Prgrph(srs,tokenized_srs)
+    print("[tokenized usecase]")
+    for i in tokenized_usecase:
         if i != [] :
             print(i)
     #print(tokenized_srs)
@@ -227,7 +244,9 @@ def makeDic(srs):
     reqIdDic = []
     tokenized_srs=[]
     tokenized_srs4w2v = []
-    tokenized_srs = collect_SRS_Prgrph(srs,tokenized_srs)
+    tokenized_usecase=[]
+    #tokenized_srs = collectPrgrph(srs,tokenized_srs)
+    tokenized_srs,tokenized_usecase = collect_SRS_Prgrph(srs,tokenized_srs,tokenized_usecase)
     for i in tokenized_srs:
         list_t = list()
         for j in i:
@@ -248,7 +267,7 @@ def makeDic(srs):
     #print(RmS(reqIdDic))
     #print(reqIdDic)
     srs2xl(reqIdDic)
-    return tokenized_srs
+    return tokenized_srs, tokenized_usecase
 
 class Paragraph_DS:
     def __init__(self,text,ilvl=0,ccff=None,name=None,reqId=None,affCell=None):
@@ -317,6 +336,21 @@ class Tbl_DS:
             col_t = self.cells[i].get('col')
             if row == row_t and col == col_t :
                 return self.cells[i].get('cell')
+    def find_cell_by_text(self,input_text_list):
+        matched_cells = []
+        for i in range(len(self.cells)):
+            text_list = copy.deepcopy(input_text_list)
+            cell = self.cells[i].get('cell')
+            for p in cell.prgrphs:
+                c_text = p.text
+                r_i = 0
+                for t_i in range(len(text_list)):
+                    if text_list[t_i-r_i] == c_text :
+                        text_list.remove(c_text)
+                        r_i += 1
+            if len(text_list) == 0 :
+                matched_cells.append(cell)
+        return matched_cells
     def InitReqId(self):
         if self.affCell != None:
             self.reqId = self.affCell.reqId
@@ -613,23 +647,25 @@ def srs_parsing():
             table_parsing(root,temp_inst_tbl)
     Init_SRS_ReqId(tbl_list)
     #print(srs)
-    print_out_srs(srs)
+    #print_out_srs(srs)
     #makeDic_w2v(srs)
-    tokenized_srs = makeDic(srs)
-    print(tokenized_srs)
+    tokenized_srs, tokenized_usecase = makeDic(srs)
+    print(tokenized_usecase)
     final_srs = srs_analysis(tokenized_srs)
     #print(final_srs)
-    for reqId in list(final_srs.keys()):
-        print('-----',reqId,'-----')
-        try :
-            o_ds_list = final_srs.get(reqId)
-            for o_ds in o_ds_list:
-                print('  [',o_ds.ilvl,']',end=' ')
-                for w in o_ds.words:
-                    print(w,end=' ')
-                print(' ',o_ds.template)
-        except:
-            pass
+    # for reqId in list(final_srs.keys()):
+    #     print('-----',reqId,'-----')
+    #     try :
+    #         o_ds_list = final_srs.get(reqId)
+    #         for o_ds in o_ds_list:
+    #             print('  [',o_ds.ilvl,']',end=' ')
+    #             for w in o_ds.words:
+    #                 print(w,end=' ')
+    #             print(' ',o_ds.template)
+    #     except:
+    #         pass
     srs_out(final_srs)
+    usecase_out(tokenized_usecase)
 
 srs_parsing()
+
