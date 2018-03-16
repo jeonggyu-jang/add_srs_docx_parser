@@ -11,14 +11,12 @@ from konlpy.tag import Kkma, Twitter
 import copy
 #from template import *
 from xlout import *
-import sys
-import numpy
-
+doc_name = '표적관리_SRS'
 req_printout = 0
 pos_printout = 1 #print out pos tree
 os.chdir(os.getcwd()) #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
-doc = docx.Document('표적관리_SRS.docx')
+doc = docx.Document(doc_name+'.docx')
 global sv_tblId #shared variable for table ID numbering
 sv_tblId = 0
 
@@ -151,6 +149,7 @@ def collectPrgrph(srs,tokenized_srs): #all paragraphs and tables parsing
     return tokenized_srs
 
 def collect_SRS_Prgrph(srs,tokenized_srs,tokenized_usecase,tblflag=0,opt=0):
+    usecase_offset = 9
     for i in range(len(srs)):
         if isinstance(srs[i],Paragraph_DS) and tblflag==1:
             if opt == 0 : #srs
@@ -172,7 +171,7 @@ def collect_SRS_Prgrph(srs,tokenized_srs,tokenized_usecase,tblflag=0,opt=0):
                                 m_row,m_col = m_c.row,m_c.col
                         else :
                             m_row,m_col = matched_cells[0].row,matched_cells[0].col
-                        for uc_r in range(8,m_row):
+                        for uc_r in range(usecase_offset,m_row):
                             collect_SRS_Prgrph(srs[i].find_cell(uc_r,uc_c).prgrphs,tokenized_srs,tokenized_usecase,tblflag=1,opt=1)
             except :
                 pass
@@ -201,7 +200,6 @@ def RmS (reqIdDic) :
                     del(reqIdDic[j])
                     j= i+1
             j=j+1
-
         i=i+1
         j=i+1
     return reqIdDic
@@ -264,7 +262,7 @@ def makeDic(srs):
     word_hist.sort(key=_count)
     #print("- - - - - [Dictionary] - - - - -")
     reqIdDic = makeReqIdDic(reqIdDic,tokenized_srs)
-    #print(RmS(reqIdDic))
+    print(RmS(reqIdDic))
     #print(reqIdDic)
     srs2xl(reqIdDic)
     return tokenized_srs, tokenized_usecase
@@ -664,8 +662,8 @@ def srs_parsing():
     #             print(' ',o_ds.template)
     #     except:
     #         pass
-    srs_out(final_srs)
-    usecase_out(tokenized_usecase)
+    srs_out(final_srs,doc_name)
+    usecase_out(tokenized_usecase,doc_name)
 
 if __name__ == "__main__":
     srs_parsing()
