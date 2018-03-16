@@ -12,7 +12,7 @@ import copy
 #from template import *
 from xlout import *
 import sys
-
+import numpy
 
 req_printout = 0
 pos_printout = 1 #print out pos tree
@@ -667,5 +667,6 @@ def srs_parsing():
     srs_out(final_srs)
     usecase_out(tokenized_usecase)
 
-srs_parsing()
+if __name__ == "__main__":
+    srs_parsing()
 
