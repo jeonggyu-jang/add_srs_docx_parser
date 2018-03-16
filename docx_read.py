@@ -262,9 +262,11 @@ def makeDic(srs):
     word_hist.sort(key=_count)
     #print("- - - - - [Dictionary] - - - - -")
     reqIdDic = makeReqIdDic(reqIdDic,tokenized_srs)
+    reqIdDic_usecase = makeReqIdDic(reqIdDic,tokenized_usecase)
     print(RmS(reqIdDic))
+    print(RmS(reqIdDic_usecase))
     #print(reqIdDic)
-    srs2xl(reqIdDic)
+    srs2xl(reqIdDic,reqIdDic_usecase)
     return tokenized_srs, tokenized_usecase
 
 class Paragraph_DS:
