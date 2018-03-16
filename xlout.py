@@ -18,7 +18,7 @@ def insert_cell(r,c,v,ws1,border=False):
     cell = ws1.cell(r,c)
     cell.value = v
     if border == True:
-        cell.font = Font(size=13)
+        cell.font = Font(size=12)
         cell.border = Border(left=Side(border_style='thin',color='FF000000'),top=Side(border_style='thin',color='FF000000'),right=Side(border_style='thin',color='FF000000'),bottom=Side(border_style='thin',color='FF000000'))
 
 class indent_number:
@@ -57,18 +57,21 @@ def list_merge(list):
         out += i
     return out
 
-def srs_out(final_srs):
+def srs_out(final_srs,doc_name):
     max_indent = 10
     reqId_col=1
     wb=Workbook()
     ws1 = wb.active
     ws1.title = 'testcase_input'
-    row = 0
+    row = 1
     col = 1
+    insert_cell(row,reqId_col,'문서명',ws1,border=True)
+    insert_cell(row,reqId_col+1,doc_name,ws1,border=True)
+    row+=1
     for reqId in list(final_srs.keys()):
         row += 1
-        insert_cell(row,reqId_col,'식별자',ws1)
-        insert_cell(row,reqId_col+1,reqId,ws1)
+        insert_cell(row,reqId_col,'식별자',ws1,border=True)
+        insert_cell(row,reqId_col+1,reqId,ws1,border=True)
         row += 1
         insert_cell(row,reqId_col,'요구사항',ws1)
         row += 1
@@ -218,8 +221,8 @@ def srs_out(final_srs):
         row+=1
     wb.save('testcase_input_by_srs.xlsx')
 
-
-def usecase_out(usecase):
+def usecase_out(usecase,doc_name):
+    opt = 0
     max_indent = 10
     offset_row=1
     offset_col=1
@@ -228,6 +231,10 @@ def usecase_out(usecase):
     ws1.title = 'testcase_input'
     row = 1
     col = 1
+    insert_cell(row,col,'문서명',ws1,border=True)
+    insert_cell(row,col+1,doc_name,ws1,border=True)
+    row +=1
+    offset_row += 1
     p_ilvl = 0
     init_flag = 0
     ind_list=[indent_number() for x in range(max_indent)]
@@ -240,6 +247,13 @@ def usecase_out(usecase):
             if ilvl == 0 :
                 if offset_col == 1:
                     offset_row += 1
+                    row+=1
+                    insert_cell(offset_row,offset_col,'식별자',ws1,border=True)
+                    insert_cell(offset_row,offset_col+1,c[0].get('reqId'),ws1,border=True)
+                    offset_row += 1
+                    row+=1
+                    insert_cell(offset_row,offset_col,"시나리오",ws1,border=True)
+                    offset_row += 1
                     row += 1
                     words = str()
                     for d in c :
@@ -250,16 +264,17 @@ def usecase_out(usecase):
                     col = 1
                     p_ilvl = 0
                     init_flag = 0
+                    left_max = 0
                     ind_list=[indent_number() for x in range(max_indent)]
                 elif offset_col == 2:
                     words = str()
                     for d in c :
                         words += d.get('word') + ' '
-                    insert_cell(offset_row,offset_col,words,ws1,border=True)
+                    insert_cell(offset_row,offset_col+left_max,words,ws1,border=True)
+                    col = offset_col + left_max
                     offset_col = 1
                     offset_row,row= row,offset_row
                     row +=1
-                    col = 2
             else :
                 words = str()
                 if init_flag == 0:
@@ -284,8 +299,26 @@ def usecase_out(usecase):
                     indent = ind_list[ilvl].aff + str(ind_list[ilvl].c_ind)
                     p_ilvl = ilvl
                 words += indent + '. '
-                for d in c:
-                    words += d.get('word') + ' '
-                insert_cell(row,col,words,ws1)
+                if opt == 0 :
+                    for d in c:
+                        words += d.get('word') + ' '
+                    insert_cell(row,col,words,ws1)
+                elif opt == 1 :
+                    insert_cell(row,col,words,ws1)
+                    col += 1
+                    if offset_col == 2:
+                        left = 0
+                        for d in c:
+                            insert_cell(row,col,d.get('word'),ws1)
+                            col += 1
+                            left += 1
+                        if left_max < left:
+                            left_max = left
+                        col = 1
+                    elif offset_col == 1:
+                        for d in c:
+                            insert_cell(row,col,d.get('word'),ws1)
+                            col += 1
+                        col = offset_col + left_max + 1
                 row += 1
     wb.save('testcase_input_by_usecase.xlsx')
