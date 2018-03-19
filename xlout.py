@@ -21,6 +21,22 @@ def insert_cell(r,c,v,ws1,border=False):
     if border == True:
         cell.font = Font(size=12)
         cell.border = Border(left=Side(border_style='thin',color='FF000000'),top=Side(border_style='thin',color='FF000000'),right=Side(border_style='thin',color='FF000000'),bottom=Side(border_style='thin',color='FF000000'))
+def find_cusor(Dp_R,Dp_C,ws1):
+    cell = ws1.cell(Dp_R,Dp_C)
+    while(True):
+        while(True):
+            if cell.value!=None :
+                Dp_C+=1
+                cell = ws1.cell(Dp_R,Dp_C)
+            else :
+                Dp_C = 1
+                Dp_R +=1
+                cell = ws1.cell(Dp_R,Dp_C)
+                break
+        check_the_cell = ws1.cell(Dp_R+1,Dp_C+1)
+        if cell.value == None and check_the_cell.value == None :
+            return Dp_R,Dp_C
+
 
 class indent_number:
     def __init__(self,affIndent=''):
@@ -223,19 +239,18 @@ def srs_out(final_srs,doc_name):
     wb.save('testcase_input_by_srs.xlsx')
 
 def usecase_out(usecase,doc_name):
-    opt = 0
+    opt = 1
     max_indent = 10
     offset_row=1
     offset_col=1
-    wb=Workbook()
+    wb=load_workbook('testcase_input_by_srs.xlsx')
     ws1 = wb.active
-    ws1.title = 'testcase_input'
-    row = 1
-    col = 1
-    insert_cell(row,col,'문서명',ws1,border=True)
-    insert_cell(row,col+1,doc_name,ws1,border=True)
-    row +=1
-    offset_row += 1
+    row,col=find_cusor(offset_row,offset_row,ws1)
+    #row += 2
+    #insert_cell(row,col,'문서명',ws1,border=True)
+    #insert_cell(row,col+1,doc_name,ws1,border=True)
+    #row +=1
+    offset_row = row
     p_ilvl = 0
     init_flag = 0
     ind_list=[indent_number() for x in range(max_indent)]
@@ -322,4 +337,4 @@ def usecase_out(usecase,doc_name):
                             col += 1
                         col = offset_col + left_max + 1
                 row += 1
-    wb.save('testcase_input_by_usecase.xlsx')
+    wb.save('testcase_input_by_srs.xlsx')
