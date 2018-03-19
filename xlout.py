@@ -223,7 +223,7 @@ def srs_out(final_srs,doc_name):
     wb.save('testcase_input_by_srs.xlsx')
 
 def usecase_out(usecase,doc_name):
-    opt = 0
+    opt = 1
     max_indent = 10
     offset_row=1
     offset_col=1
