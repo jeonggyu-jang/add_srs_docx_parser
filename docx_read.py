@@ -91,17 +91,19 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
         comNoun = str()
         if (prgrph.t_tree[i][1] == 'Noun' or prgrph.t_tree[i][0] == '-' or prgrph.t_tree[i][1] == 'Alpha' \
                 or prgrph.t_tree[i][0] == '/' or prgrph.t_tree[i][1] == 'Number') \
-                and (prgrph.t_tree[i][0] != '와' and prgrph.t_tree[i][0] != '다음') :#have to add 'NR' !!!!!!!!!!!
+                and (prgrph.t_tree[i][0] != '와' and prgrph.t_tree[i][0] != '다음') :
             try :
-                if prgrph.t_tree[i+1][0] == '하다':
+                if prgrph.t_tree[i+1][0] == '하다' or prgrph.t_tree[i+1][0] == '한':
                     newDict = {'word':prgrph.t_tree[i][0] + '하다','reqId':reqId,'ilvl':ilvl,'template':template}
                     tokenized_prgrph.append(newDict)
                 else :
                     comNoun += prgrph.t_tree[i][0]
                     for j in range(i+1,len(prgrph.t_tree)):
-                        if (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
-                                and prgrph.t_tree[j][0] != '/' and prgrph.t_tree[j][1] != 'Number')\
-                                or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :#have to add 'NR' !!!!!!!!!!!
+                        if prgrph.t_tree[j][0] == '의' :
+                            pass
+                        elif (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
+                                and prgrph.t_tree[j][0] != '/' and prgrph.t_tree[j][1] != 'Number') \
+                                or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :
                             #print(comNoun)
                             i = j
                             break
@@ -115,15 +117,19 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
             except :
                 comNoun += prgrph.t_tree[i][0]
                 for j in range(i+1,len(prgrph.t_tree)):
-                    if (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
+                    if prgrph.t_tree[j][1] == '의' :
+                            pass
+                    elif (prgrph.t_tree[j][1] != 'Noun' and prgrph.t_tree[j][0] != '-' and prgrph.t_tree[j][1] != 'Alpha' \
                             and prgrph.t_tree[j][0] != '/' and prgrph.t_tree[j][1] != 'Number')\
-                            or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :#have to add 'NR' !!!!!!!!!!!
+                            or (prgrph.t_tree[j][0] == '와' and prgrph.t_tree[j][0] == '다음') :
                         #print(comNoun)
                         i = j
                         break
                     elif j+1 == len(prgrph.t_tree):
                         comNoun += prgrph.t_tree[j][0]
                         i = j
+                    elif prgrph.t_tree[j][0] == '의' :
+                        pass
                     else :
                         comNoun += prgrph.t_tree[j][0]
                 newDict = {'word':comNoun,'reqId':reqId,'ilvl':ilvl,'template':template}
@@ -647,7 +653,7 @@ def srs_parsing():
             table_parsing(root,temp_inst_tbl)
     Init_SRS_ReqId(tbl_list)
     #print(srs)
-    #print_out_srs(srs)
+    print_out_srs(srs)
     #makeDic_w2v(srs)
     tokenized_srs, tokenized_usecase = makeDic(srs)
     print(tokenized_usecase)
