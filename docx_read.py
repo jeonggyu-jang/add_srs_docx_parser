@@ -1,5 +1,6 @@
 import os
-from gensim.models import Word2Vec
+#from gensim.models import Word2Vec
+import sys
 import docx
 from docx.document import Document
 from docx.oxml.table import *
@@ -8,15 +9,15 @@ from docx.table import _Cell, Table
 from docx.text.paragraph import Paragraph
 from docx.oxml.numbering import CT_NumPr
 from konlpy.tag import Kkma, Twitter
+from konlpy import jvm
 import copy
 #from template import *
 from xlout import *
-doc_name = '표적관리_SRS'
+
 req_printout = 0
 pos_printout = 1 #print out pos tree
-os.chdir(os.getcwd()) #docx file directory
+#os.chdir(os.getcwd()) #docx file directory
 #doc = docx.Document('Use_case 작성.docx')
-doc = docx.Document(doc_name+'.docx')
 global sv_tblId #shared variable for table ID numbering
 sv_tblId = 0
 
@@ -219,30 +220,30 @@ def makeReqIdDic(reqIdDic,tokenized_srs):
             result_list.append((word,reqId))
     return result_list
 
-def makeDic_w2v(srs): #tokenized_srs를 튜플리스트로 바꾸었기때문에 makeDic_w2v에서 사용하기위해 word만 추출하는 코드 추가해야함 - jjg 03/14
-    tokenized_srs=[]
-    tokenized_usecase=[]
-    #tokenized_srs = collectPrgrph(srs,tokenized_srs)
-    tokenized_srs,tokenized_usecase = collect_SRS_Prgrph(srs,tokenized_srs)
-    print("[tokenized usecase]")
-    for i in tokenized_usecase:
-        if i != [] :
-            print(i)
-    #print(tokenized_srs)
-    embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
-    embedding_model.init_sims(replace=True)
-    embedding_model.save("word2vec_result.model")
-    #print(embedding_model)
-    #print(embedding_model.wv)
-    #print(embedding_model.wv.vocab)
-    #print(embedding_model.most_similar(positive=["표적"], topn=100))
-    word_hist=[]
-    for w in embedding_model.wv.vocab:
-        word_hist_instance = (w,embedding_model.wv.vocab[w].count)
-        word_hist.append(word_hist_instance)
-    word_hist.sort(key=_count)
-    for i in word_hist:
-        print(i)
+# def makeDic_w2v(srs): #tokenized_srs를 튜플리스트로 바꾸었기때문에 makeDic_w2v에서 사용하기위해 word만 추출하는 코드 추가해야함 - jjg 03/14
+#     tokenized_srs=[]
+#     tokenized_usecase=[]
+#     #tokenized_srs = collectPrgrph(srs,tokenized_srs)
+#     tokenized_srs,tokenized_usecase = collect_SRS_Prgrph(srs,tokenized_srs)
+#     print("[tokenized usecase]")
+#     for i in tokenized_usecase:
+#         if i != [] :
+#             print(i)
+#     #print(tokenized_srs)
+#     embedding_model = Word2Vec(tokenized_srs,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
+#     embedding_model.init_sims(replace=True)
+#     embedding_model.save("word2vec_result.model")
+#     #print(embedding_model)
+#     #print(embedding_model.wv)
+#     #print(embedding_model.wv.vocab)
+#     #print(embedding_model.most_similar(positive=["표적"], topn=100))
+#     word_hist=[]
+#     for w in embedding_model.wv.vocab:
+#         word_hist_instance = (w,embedding_model.wv.vocab[w].count)
+#         word_hist.append(word_hist_instance)
+#     word_hist.sort(key=_count)
+#     for i in word_hist:
+#         print(i)
 
 def makeDic(srs):
     reqIdDic = []
@@ -251,21 +252,21 @@ def makeDic(srs):
     tokenized_usecase=[]
     #tokenized_srs = collectPrgrph(srs,tokenized_srs)
     tokenized_srs,tokenized_usecase = collect_SRS_Prgrph(srs,tokenized_srs,tokenized_usecase)
-    for i in tokenized_srs:
-        list_t = list()
-        for j in i:
-            word_t = j.get('word')
-            list_t.append(word_t)
-            print(word_t,j.get('reqId'))
-        tokenized_srs4w2v.append(list_t)
-    embedding_model = Word2Vec(tokenized_srs4w2v,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
-    embedding_model.init_sims(replace=True)
-    embedding_model.save("word2vec_result.model")
-    word_hist=[]
-    for w in embedding_model.wv.vocab:
-        word_hist_instance = (w,embedding_model.wv.vocab[w].count)
-        word_hist.append(word_hist_instance)
-    word_hist.sort(key=_count)
+    # for i in tokenized_srs:
+    #     list_t = list()
+    #     for j in i:
+    #         word_t = j.get('word')
+    #         list_t.append(word_t)
+    #         print(word_t,j.get('reqId'))
+    #     tokenized_srs4w2v.append(list_t)
+    # embedding_model = Word2Vec(tokenized_srs4w2v,size=100,window=3,min_count=1,workers=4,iter=100,sg=1)
+    # embedding_model.init_sims(replace=True)
+    # embedding_model.save("word2vec_result.model")
+    # word_hist=[]
+    # for w in embedding_model.wv.vocab:
+    #     word_hist_instance = (w,embedding_model.wv.vocab[w].count)
+    #     word_hist.append(word_hist_instance)
+    # word_hist.sort(key=_count)
     #print("- - - - - [Dictionary] - - - - -")
     reqIdDic = makeReqIdDic(reqIdDic,tokenized_srs)
     reqIdDic_usecase = makeReqIdDic(reqIdDic,tokenized_usecase)
@@ -633,7 +634,7 @@ def srs_analysis(t_srs):
             pass
     return f_srs
 
-def srs_parsing():
+def srs_parsing(doc,doc_name):
     global sv_tblId
     srs = [] # all srs block list
     tbl_list = [] # list only for table block
@@ -674,5 +675,12 @@ def srs_parsing():
     usecase_out(tokenized_usecase,doc_name)
 
 if __name__ == "__main__":
-    srs_parsing()
+    jvm.init_jvm()
+    os.path.dirname(sys.argv[0])
+    if len(sys.argv) > 1:
+        doc_name = sys.argv[1]
+    else :
+        doc_name = '표적관리_SRS'
+    doc = docx.Document(doc_name+'.docx')
+    srs_parsing(doc,doc_name)
 
