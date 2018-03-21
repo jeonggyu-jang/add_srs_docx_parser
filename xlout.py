@@ -1,26 +1,47 @@
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Border, Side, Font, Alignment, PatternFill, Color
+from openpyxl.utils import get_column_letter
+#from openpyxl.worksheet.cell_range import max_row
 
 def srs2xl(reqIdDic,reqIdDic_usecase):
     wb=Workbook()
     ws1 = wb.active
     ws1.title = "Input_Sheet"
-    ws1["A1"] = "Word"
-    ws1["B1"] = "ReqID"
+    insert_cell(1,1,"Word",ws1,border=True)
+    insert_cell(1,2,"ReqID",ws1,border=True)
+    color_cell(1,1,ws1)
+    color_cell(1,2,ws1)
     reqIdDic_merged = reqIdDic+reqIdDic_usecase
     for i in range(2,len(reqIdDic_merged)) :
         for j in range(1,3) :
             c = ws1.cell(i,j)
             if reqIdDic_merged[i-2][1] != None :
                 c.value = reqIdDic_merged[i-2][j-1]
-    wb.save('Dictionary.xlsx')
+    wb.save('SRS 분석 결과.xlsx')
+
+# def srs2xl(reqIdDic,reqIdDic_usecase):
+#     dic_xlsx = load_workbook('Dictionary.xlsx')
+#     ws1 = dic_xlsx.create_sheet('식별자 Dictionary')
+#     insert_cell(1,1,"Word",ws1,border=True)
+#     insert_cell(1,2,"ReqID",ws1,border=True)
+#     color_cell(1,1,ws1)
+#     color_cell(1,2,ws1)
+#     reqIdDic_merged = reqIdDic+reqIdDic_usecase
+#     for i in range(2,len(reqIdDic_merged)) :
+#         for j in range(1,3) :
+#             c = ws1.cell(i,j)
+#             if reqIdDic_merged[i-2][1] != None :
+#                 c.value = reqIdDic_merged[i-2][j-1]
+#     dic_xlsx.save('Dictionary.xlsx')
 
 def insert_cell(r,c,v,ws1,border=False):
     cell = ws1.cell(r,c)
     cell.value = v
     if border == True:
-        cell.font = Font(size=12)
+        cell.font = Font(size=10)
         cell.border = Border(left=Side(border_style='thin',color='FF000000'),top=Side(border_style='thin',color='FF000000'),right=Side(border_style='thin',color='FF000000'),bottom=Side(border_style='thin',color='FF000000'))
+        cell.alignment=Alignment(horizontal='center',vertical='center')
+
 def find_cusor(Dp_R,Dp_C,ws1):
     cell = ws1.cell(Dp_R,Dp_C)
     while(True):
@@ -36,7 +57,6 @@ def find_cusor(Dp_R,Dp_C,ws1):
         check_the_cell = ws1.cell(Dp_R+1,Dp_C+1)
         if cell.value == None and check_the_cell.value == None :
             return Dp_R,Dp_C
-
 
 class indent_number:
     def __init__(self,affIndent=''):
@@ -68,11 +88,26 @@ class is_a_word:
     def insert_child(self,child):
         self.children.append(child)
 
+def setup_TitleCell(row,col,ws1,wb):
+    sheet=wb.get_sheet_by_name('testcase_input')
+    sheet.merge_cells('A1:E1')
+    #ws1.merge_cell(A1:E1)
+    cell = ws1.cell(row,col)
+    cell.value = 'Testcase_Input'
+    cell.font=Font(size=15,bold=True)
+    cell.border = Border(left=Side(border_style='thin',color='FF000000'),top=Side(border_style='thin',color='FF000000'),right=Side(border_style='thin',color='FF000000'),bottom=Side(border_style='thin',color='FF000000'))
+    cell.alignment=Alignment(horizontal='center',vertical='center')
+    color_cell(1,1,ws1)
+
 def list_merge(list):
     out = str()
     for i in list:
         out += i
     return out
+
+def color_cell(row,col,ws1):
+    cell = ws1.cell(row,col)
+    cell.fill = PatternFill(patternType='solid',fgColor=Color('C0C0C0'))
 
 def srs_out(final_srs,doc_name):
     max_indent = 10
@@ -80,17 +115,21 @@ def srs_out(final_srs,doc_name):
     wb=Workbook()
     ws1 = wb.active
     ws1.title = 'testcase_input'
-    row = 1
+    row = 2
     col = 1
+    setup_TitleCell(1,1,ws1,wb)
     insert_cell(row,reqId_col,'문서명',ws1,border=True)
+    color_cell(row,reqId_col,ws1)
     insert_cell(row,reqId_col+1,doc_name,ws1,border=True)
     row+=1
     for reqId in list(final_srs.keys()):
         row += 1
         insert_cell(row,reqId_col,'식별자',ws1,border=True)
+        color_cell(row,reqId_col,ws1)
         insert_cell(row,reqId_col+1,reqId,ws1,border=True)
         row += 1
-        insert_cell(row,reqId_col,'요구사항',ws1)
+        insert_cell(row,reqId_col,'요구사항',ws1,border=True)
+        color_cell(row,reqId_col,ws1)
         row += 1
         p_ilvl = 1
         initflag = 1
@@ -116,7 +155,7 @@ def srs_out(final_srs,doc_name):
             elif c_template == 'is_a' :
                 try:
                     is_a_cnt += 1
-                    is_a_word_list.append(is_a_word(o_ds.words[-2] + o_ds.words[-1],'is_a'))
+                    is_a_word_list.append(is_a_word(o_ds.words[-1],'is_a'))
                 except:
                     print('is a word range error')
                     pass
@@ -202,7 +241,8 @@ def srs_out(final_srs,doc_name):
             # row +=1
             p_template = c_template
         p_col =reqId_col
-        insert_cell(row,p_col,'has-a list',ws1)
+        insert_cell(row,p_col,'has-a list',ws1,border=True)
+        color_cell(row,p_col,ws1)
         p_col = reqId_col
         row += 1
         print('component_word_list')
@@ -219,7 +259,8 @@ def srs_out(final_srs,doc_name):
             p_col = reqId_col
             row+=1
         p_col = reqId_col
-        insert_cell(row,p_col,'is-a list',ws1)
+        insert_cell(row,p_col,'is-a list',ws1,border=True)
+        color_cell(row,p_col,ws1)
         p_col = reqId_col
         row += 1
         print('is_a_word_list')
@@ -237,16 +278,18 @@ def srs_out(final_srs,doc_name):
             row+=1
         row+=1
     wb.save('testcase_input_by_srs.xlsx')
+    return row
 
-def usecase_out(usecase,doc_name):
+def usecase_out(usecase,doc_name,current_row=1):
     opt = 1
     max_indent = 10
-    offset_row=1
+    row = current_row
+    offset_row=current_row
     offset_col=1
     wb=load_workbook('testcase_input_by_srs.xlsx')
     ws1 = wb.active
-    row,col=find_cusor(offset_row,offset_row,ws1)
-    #row += 2
+    #row,col=find_cusor(offset_row,offset_col,ws1)
+    row += 2
     #insert_cell(row,col,'문서명',ws1,border=True)
     #insert_cell(row,col+1,doc_name,ws1,border=True)
     #row +=1
@@ -265,10 +308,12 @@ def usecase_out(usecase,doc_name):
                     offset_row += 1
                     row+=1
                     insert_cell(offset_row,offset_col,'식별자',ws1,border=True)
+                    color_cell(offset_row,offset_col,ws1)
                     insert_cell(offset_row,offset_col+1,c[0].get('reqId'),ws1,border=True)
                     offset_row += 1
                     row+=1
                     insert_cell(offset_row,offset_col,"시나리오",ws1,border=True)
+                    color_cell(offset_row,offset_col,ws1)
                     offset_row += 1
                     row += 1
                     words = str()
@@ -337,4 +382,5 @@ def usecase_out(usecase,doc_name):
                             col += 1
                         col = offset_col + left_max + 1
                 row += 1
+    #change_sizeofcell(ws1,wb)
     wb.save('testcase_input_by_srs.xlsx')

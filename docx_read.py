@@ -87,6 +87,8 @@ def tokenizePrgrph_comNoun_twitter(prgrph): #Selecting just compound Noun
     reqId = prgrph.reqId
     ilvl = prgrph.ilvl
     template=prgrph.template
+    # dic_xlsx = load_workbook('Dictionary.xlsx')
+    # wc = dic_xlsx.get_sheet_by_name('행동')
     i=0
     while i <= (len(prgrph.t_tree)-1):
         comNoun = str()
@@ -671,8 +673,8 @@ def srs_parsing(doc,doc_name):
     #             print(' ',o_ds.template)
     #     except:
     #         pass
-    srs_out(final_srs,doc_name)
-    usecase_out(tokenized_usecase,doc_name)
+    c_row = srs_out(final_srs,doc_name)
+    usecase_out(tokenized_usecase,doc_name,current_row=c_row)
 
 if __name__ == "__main__":
     jvm.init_jvm()
@@ -680,7 +682,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         doc_name = sys.argv[1]
     else :
-        doc_name = '표적관리_SRS'
+        doc_name = '표적관리_SRS_full'
     doc = docx.Document(doc_name+'.docx')
     srs_parsing(doc,doc_name)
 
